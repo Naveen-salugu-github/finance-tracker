@@ -48,6 +48,7 @@ export default function DashboardScreen() {
     : { label: 'Unknown', color: '#6b7280', range: '0-0' };
 
   return (
+    <>
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
