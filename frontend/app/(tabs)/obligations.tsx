@@ -10,11 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useData } from '../../context/DataContext';
-import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
-import { Input } from '../../components/Input';
-import { Obligation, ObligationCategory } from '../../types';
+import { useData } from '../context/DataContext';
+import { Card } from '../components/Card';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+import { Obligation, ObligationCategory } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ObligationsScreen() {
