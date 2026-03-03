@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useData } from '../context/DataContext';
-import { Card } from '../components/Card';
-import { CircularProgress } from '../components/CircularProgress';
-import { fsiCalculator } from '../services/fsiCalculator';
+import { useData } from '../../context/DataContext';
+import { Card } from '../../components/Card';
+import { CircularProgress } from '../../components/CircularProgress';
+import { fsiCalculator } from '../../services/fsiCalculator';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function DashboardScreen() {
