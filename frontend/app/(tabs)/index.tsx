@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,13 @@ import {
 import { useData } from '../context/DataContext';
 import { Card } from '../components/Card';
 import { CircularProgress } from '../components/CircularProgress';
+import { WhatIfAnalysis } from '../components/WhatIfAnalysis';
 import { fsiCalculator } from '../services/fsiCalculator';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function DashboardScreen() {
   const { obligations, profile, fsiBreakdown, loading } = useData();
+  const [showWhatIf, setShowWhatIf] = useState(false);
 
   if (loading) {
     return (
