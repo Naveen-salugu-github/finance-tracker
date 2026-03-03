@@ -8,11 +8,11 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { useData } from '../../context/DataContext';
-import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
-import { Input } from '../../components/Input';
-import { IncomeType } from '../../types';
+import { useData } from '../context/DataContext';
+import { Card } from '../components/Card';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+import { IncomeType } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native';
 
