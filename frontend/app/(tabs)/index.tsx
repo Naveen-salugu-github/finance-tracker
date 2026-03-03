@@ -207,6 +207,10 @@ export default function DashboardScreen() {
 
       <View style={{ height: 32 }} />
     </ScrollView>
+
+    {/* What-If Analysis Modal */}
+    <WhatIfAnalysis visible={showWhatIf} onClose={() => setShowWhatIf(false)} />
+  </>
   );
 }
 
