@@ -55,6 +55,19 @@ export default function DashboardScreen() {
         <Text style={styles.subtitle}>Your complete financial overview</Text>
       </View>
 
+      {/* What-If Analysis Button */}
+      {profile && profile.monthlyIncome > 0 && (
+        <TouchableOpacity
+          style={styles.whatIfButton}
+          onPress={() => setShowWhatIf(true)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="analytics-outline" size={20} color="#ffffff" />
+          <Text style={styles.whatIfButtonText}>What-If Analysis</Text>
+          <Ionicons name="sparkles" size={16} color="#fbbf24" />
+        </TouchableOpacity>
+      )}
+
       {/* FSI Score Card */}
       <Card style={styles.fsiCard}>
         <View style={styles.fsiContent}>
