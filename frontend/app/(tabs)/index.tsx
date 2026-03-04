@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Share,
 } from 'react-native';
 import { useData } from '../context/DataContext';
 import { Card } from '../components/Card';
@@ -17,6 +18,55 @@ import { Ionicons } from '@expo/vector-icons';
 export default function DashboardScreen() {
   const { obligations, profile, fsiBreakdown, loading } = useData();
   const [showWhatIf, setShowWhatIf] = useState(false);
+
+  const handleShareFSI = async () => {
+    if (!fsiBreakdown || !profile) return;
+
+    const riskCategory = fsiCalculator.getRiskCategory(fsiBreakdown.totalFSI);
+    const totalObligations = obligations.reduce(
+      (sum, obl) => sum + obl.monthlyAmount,
+      0
+    );
+    const disposableIncome = profile.monthlyIncome - totalObligations;
+
+    const message = `📊 My Financial Stability Index (FSI): ${fsiBreakdown.totalFSI}/100
+
+Risk Category: ${riskCategory.label} ${getEmojiForRisk(riskCategory.label)}
+
+💰 Monthly Income: ₹${profile.monthlyIncome.toLocaleString('en-IN')}
+📝 Total Obligations: ₹${totalObligations.toLocaleString('en-IN')}
+✨ Disposable Income: ₹${disposableIncome.toLocaleString('en-IN')}
+
+Calculate your FSI: https://financial-risk-scan.preview.emergentagent.com
+
+#FinancialHealth #StabilityScore`;
+
+    try {
+      await Share.share({
+        message: message,
+        title: 'My Financial Stability Index',
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const getEmojiForRisk = (label: string): string => {
+    switch (label) {
+      case 'Structurally Strong':
+        return '🎉';
+      case 'Stable':
+        return '✅';
+      case 'Sensitive':
+        return '⚠️';
+      case 'High Exposure':
+        return '🔴';
+      case 'Fragile':
+        return '🚨';
+      default:
+        return '📊';
+    }
+  };
 
   if (loading) {
     return (
