@@ -134,8 +134,49 @@ Calculate your FSI: https://financial-risk-scan.preview.emergentagent.com
             </Text>
             <Text style={styles.riskRange}>Score Range: {riskCategory.range}</Text>
           </View>
+          
+          {/* Share Button */}
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={handleShareFSI}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="share-social" size={18} color="#3b82f6" />
+            <Text style={styles.shareButtonText}>Share My FSI</Text>
+          </TouchableOpacity>
         </View>
       </Card>
+
+      {/* Quick Stats */}
+      <View style={styles.quickStats}>
+        <Card style={styles.statCard}>
+          <View style={styles.statIcon}>
+            <Ionicons name="list" size={20} color="#3b82f6" />
+          </View>
+          <Text style={styles.statValue}>{obligations.length}</Text>
+          <Text style={styles.statLabel}>Obligations</Text>
+        </Card>
+
+        <Card style={styles.statCard}>
+          <View style={styles.statIcon}>
+            <Ionicons name="trending-up" size={20} color="#10b981" />
+          </View>
+          <Text style={styles.statValue}>
+            {disposableIncome >= 0 ? '+' : ''}{Math.round((disposableIncome / profile.monthlyIncome) * 100)}%
+          </Text>
+          <Text style={styles.statLabel}>Savings Rate</Text>
+        </Card>
+
+        <Card style={styles.statCard}>
+          <View style={styles.statIcon}>
+            <Ionicons name="shield-checkmark" size={20} color="#8b5cf6" />
+          </View>
+          <Text style={styles.statValue}>
+            {totalObligations > 0 ? Math.round(profile.emergencySavings / totalObligations) : 0}x
+          </Text>
+          <Text style={styles.statLabel}>Coverage</Text>
+        </Card>
+      </View>
 
       {/* Financial Summary */}
       <View style={styles.summaryGrid}>
