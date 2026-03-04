@@ -73,6 +73,40 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleReset = () => {
+    Alert.alert(
+      'Reset Profile',
+      'Are you sure you want to reset your profile? This will clear all your financial information.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await updateProfile({
+                monthlyIncome: 0,
+                emergencySavings: 0,
+                incomeType: 'Salaried',
+              });
+              setFormData({
+                monthlyIncome: '',
+                emergencySavings: '',
+                incomeType: 'Salaried',
+              });
+              Alert.alert('Success', 'Profile has been reset');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset profile');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const getIncomeTypeIcon = (type: IncomeType) => {
     switch (type) {
       case 'Salaried':
