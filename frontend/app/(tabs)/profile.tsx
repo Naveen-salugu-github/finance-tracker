@@ -368,4 +368,22 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 8,
   },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#ef4444',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  resetButtonText: {
+    color: '#ef4444',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
