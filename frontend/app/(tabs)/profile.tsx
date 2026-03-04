@@ -223,6 +223,20 @@ export default function ProfileScreen() {
           <View style={styles.buttonContainer}>
             <Button title="Save Profile" onPress={handleSave} loading={saving} />
           </View>
+
+          {/* Reset Profile Button */}
+          {profile && profile.monthlyIncome > 0 && (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={handleReset}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="refresh-outline" size={20} color="#ef4444" />
+                <Text style={styles.resetButtonText}>Reset Profile</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         <View style={{ height: 32 }} />
