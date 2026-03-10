@@ -7,7 +7,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import Dict, List
+from typing import Dict, List, Optional
 import uuid
 from datetime import datetime
 import requests
@@ -76,6 +76,79 @@ def format_ai_insights(insights: str) -> str:
 
     return "\n".join(lines[:3])
 
+
+async def _call_groq(prompt: str) -> Optional[str]:
+    key = os.environ.get("GROQ_API_KEY")
+    if not key:
+        return None
+    payload = {
+        "model": "llama-3.1-8b-instant",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 100,
+    }
+    try:
+        response = await asyncio.to_thread(
+            requests.post,
+            "https://api.groq.com/openai/v1/chat/completions",
+            json=payload,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return (data.get("choices") or [{}])[0].get("message", {}).get("content")
+    except Exception as exc:
+        logger.exception("Groq request failed: %s", exc)
+        return None
+
+
+async def _call_openai(prompt: str) -> Optional[str]:
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        return None
+    payload = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 100,
+    }
+    try:
+        response = await asyncio.to_thread(
+            requests.post,
+            "https://api.openai.com/v1/chat/completions",
+            json=payload,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return (data.get("choices") or [{}])[0].get("message", {}).get("content")
+    except Exception as exc:
+        logger.exception("OpenAI request failed: %s", exc)
+        return None
+
+
+async def _call_ollama(prompt: str) -> Optional[str]:
+    endpoint = os.environ.get("AI_MODEL_ENDPOINT")
+    if not endpoint:
+        return None
+    timeout = int(os.environ.get("AI_MODEL_TIMEOUT_SECONDS", "300"))
+    payload = {
+        "model": "llama3.2:3b",
+        "prompt": prompt,
+        "stream": False,
+        "options": {"num_predict": 100},
+    }
+    try:
+        response = await asyncio.to_thread(
+            requests.post, endpoint, json=payload, timeout=timeout
+        )
+        response.raise_for_status()
+        result = response.json()
+        return result.get("response")
+    except Exception as exc:
+        logger.exception("Ollama request failed: %s", exc)
+        return None
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
@@ -96,40 +169,18 @@ async def get_status_checks():
 
 @api_router.post("/ai-insights", response_model=AIInsightsResponse)
 async def generate_ai_insights(input: AIInsightsRequest):
-    ai_model_endpoint = os.environ.get("AI_MODEL_ENDPOINT")
-    ai_model_timeout = int(os.environ.get("AI_MODEL_TIMEOUT_SECONDS", "300"))
-    if not ai_model_endpoint:
+    prompt = build_ai_insights_prompt(input.income, input.expenses)
+
+    raw = (
+        (await _call_groq(prompt))
+        or (await _call_openai(prompt))
+        or (await _call_ollama(prompt))
+    )
+
+    if not raw or not isinstance(raw, str):
         raise HTTPException(status_code=503, detail="AI insights unavailable.")
 
-    prompt = build_ai_insights_prompt(input.income, input.expenses)
-    payload = {
-        "model": "llama3.2:3b",
-        "prompt": prompt,
-        "stream": False,
-        "options": {"num_predict": 100},
-    }
-
-    try:
-        response = await asyncio.to_thread(
-            requests.post,
-            ai_model_endpoint,
-            json=payload,
-            timeout=ai_model_timeout,
-        )
-        response.raise_for_status()
-        result = response.json()
-    except requests.RequestException as exc:
-        logger.exception("Failed to fetch AI insights: %s", exc)
-        raise HTTPException(status_code=502, detail="AI insights unavailable.") from exc
-    except ValueError as exc:
-        logger.exception("Invalid AI response payload: %s", exc)
-        raise HTTPException(status_code=502, detail="AI insights unavailable.") from exc
-
-    insights = result.get("response")
-    if not insights or not isinstance(insights, str):
-        raise HTTPException(status_code=502, detail="AI insights unavailable.")
-
-    return AIInsightsResponse(insights=format_ai_insights(insights))
+    return AIInsightsResponse(insights=format_ai_insights(raw))
 
 # Include the router in the main app
 app.include_router(api_router)
