@@ -5,19 +5,25 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Share,
 } from 'react-native';
 import { useData } from '../context/DataContext';
+import { AIInsights } from '../components/AIInsights';
+import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { CircularProgress } from '../components/CircularProgress';
 import { WhatIfAnalysis } from '../components/WhatIfAnalysis';
+import { generateAIInsights } from '../services/aiInsights';
 import { fsiCalculator } from '../services/fsiCalculator';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function DashboardScreen() {
   const { obligations, profile, fsiBreakdown, loading } = useData();
   const [showWhatIf, setShowWhatIf] = useState(false);
+  const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [aiInsightsProvider, setAiInsightsProvider] = useState<string | null>(null);
+  const [aiInsightsError, setAiInsightsError] = useState<string | null>(null);
+  const [generatingInsights, setGeneratingInsights] = useState(false);
 
   const handleShareFSI = async () => {
     if (!fsiBreakdown || !profile) return;
@@ -65,6 +71,39 @@ Calculate your FSI: https://financial-risk-scan.preview.emergentagent.com
         return '🚨';
       default:
         return '📊';
+    }
+  };
+
+  const buildExpensePayload = () =>
+    obligations.reduce<Record<string, number>>((accumulator, obligation) => {
+      const key = obligation.category.toLowerCase().replace(/\s+/g, '_');
+      accumulator[key] = (accumulator[key] || 0) + obligation.monthlyAmount;
+      return accumulator;
+    }, {});
+
+  const handleGenerateAIInsights = async () => {
+    if (!profile) {
+      return;
+    }
+
+    try {
+      setGeneratingInsights(true);
+      setAiInsightsError(null);
+
+      const result = await generateAIInsights({
+        income: profile.monthlyIncome,
+        expenses: buildExpensePayload(),
+      });
+
+      setAiInsights(result.insights);
+      setAiInsightsProvider(result.provider ?? null);
+    } catch (error) {
+      console.error('Error generating AI insights:', error);
+      setAiInsights(null);
+      setAiInsightsProvider(null);
+      setAiInsightsError('AI insights unavailable.');
+    } finally {
+      setGeneratingInsights(false);
     }
   };
 
@@ -207,6 +246,25 @@ Calculate your FSI: https://financial-risk-scan.preview.emergentagent.com
           ₹{disposableIncome.toLocaleString('en-IN')}
         </Text>
       </Card>
+
+      <Card style={styles.aiActionCard}>
+        <Text style={styles.aiActionTitle}>AI Financial Insights</Text>
+        <Text style={styles.aiActionSubtitle}>
+          Generate short spending tips based on your income and saved obligations.
+        </Text>
+        <Button
+          title="Generate AI Insights"
+          onPress={handleGenerateAIInsights}
+          loading={generatingInsights}
+        />
+      </Card>
+
+      <AIInsights
+        insights={aiInsights}
+        loading={generatingInsights}
+        error={aiInsightsError}
+        provider={aiInsightsProvider}
+      />
 
       {/* Score Breakdown */}
       {fsiBreakdown && (
@@ -396,6 +454,22 @@ const styles = StyleSheet.create({
   summaryCardFull: {
     marginHorizontal: 16,
     marginBottom: 16,
+  },
+  aiActionCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  aiActionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  aiActionSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 16,
+    lineHeight: 20,
   },
   summaryLabel: {
     fontSize: 14,
