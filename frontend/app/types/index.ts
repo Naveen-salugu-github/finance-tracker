@@ -14,6 +14,8 @@ export interface UserProfile {
   monthlyIncome: number;
   emergencySavings: number;
   incomeType: IncomeType;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface FSIBreakdown {

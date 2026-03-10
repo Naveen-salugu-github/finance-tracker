@@ -141,7 +141,9 @@ Calculate your FSI: https://financial-risk-scan.preview.emergentagent.com
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Financial Stability</Text>
+        <Text style={styles.title}>
+          {profile?.lastName ? `Welcome, ${profile.lastName}` : 'Financial Stability'}
+        </Text>
         <Text style={styles.subtitle}>Your complete financial overview</Text>
       </View>
 

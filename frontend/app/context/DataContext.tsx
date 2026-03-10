@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Obligation, UserProfile, FSIBreakdown } from '../types';
 import { storageService } from '../services/storage';
+import { supabaseProfile } from '../services/supabaseProfile';
 import { fsiCalculator } from '../services/fsiCalculator';
 import { notificationService } from '../services/notifications';
+import { useAuth } from './AuthContext';
 
 interface DataContextType {
   obligations: Obligation[];
@@ -19,6 +21,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { session } = useAuth();
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [fsiBreakdown, setFsiBreakdown] = useState<FSIBreakdown | null>(null);
@@ -28,6 +31,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadData();
     requestNotificationPermissions();
   }, []);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const remote = await supabaseProfile.getProfile(session.user.id);
+        if (!cancelled && remote) {
+          setProfile((prev) => ({
+            ...(prev || { monthlyIncome: 0, emergencySavings: 0, incomeType: 'Salaried' }),
+            ...remote,
+          }));
+          await storageService.saveProfile({
+            ...remote,
+            monthlyIncome: remote.monthlyIncome,
+            emergencySavings: remote.emergencySavings,
+            incomeType: remote.incomeType,
+          });
+        }
+      } catch (e) {
+        console.error('Error loading Supabase profile:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (profile && obligations.length >= 0) {
@@ -47,7 +75,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         storageService.getObligations(),
         storageService.getProfile(),
       ]);
-      
+
       setObligations(loadedObligations);
       setProfile(loadedProfile || {
         monthlyIncome: 0,
@@ -125,6 +153,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await storageService.saveProfile(newProfile);
       setProfile(newProfile);
+      if (session?.user) {
+        await supabaseProfile.upsertProfile(
+          session.user.id,
+          session.user.email ?? undefined,
+          newProfile
+        );
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;
