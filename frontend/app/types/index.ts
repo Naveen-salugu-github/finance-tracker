@@ -37,4 +37,5 @@ export interface AIInsightsRequest {
 
 export interface AIInsightsResponse {
   insights: string;
+  provider?: string;
 }

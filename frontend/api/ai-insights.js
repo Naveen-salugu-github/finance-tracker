@@ -72,5 +72,6 @@ export default async function handler(req, res) {
   }
 
   const insights = (raw && formatInsights(raw)) || FALLBACK;
-  return res.status(200).json({ insights });
+  res.setHeader('X-AI-Provider', 'Groq');
+  return res.status(200).json({ insights, provider: 'Groq' });
 }

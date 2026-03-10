@@ -7,6 +7,7 @@ interface AIInsightsProps {
   insights?: string | null;
   loading?: boolean;
   error?: string | null;
+  provider?: string | null;
 }
 
 function parseInsightLines(insights?: string | null): string[] {
@@ -23,7 +24,7 @@ function parseInsightLines(insights?: string | null): string[] {
   return lines.length > 0 ? lines : [insights.trim()];
 }
 
-export const AIInsights: React.FC<AIInsightsProps> = ({ insights, loading, error }) => {
+export const AIInsights: React.FC<AIInsightsProps> = ({ insights, loading, error, provider }) => {
   const items = parseInsightLines(insights);
 
   if (!loading && !error && items.length === 0) {
@@ -37,6 +38,9 @@ export const AIInsights: React.FC<AIInsightsProps> = ({ insights, loading, error
           <Ionicons name="sparkles-outline" size={20} color="#8b5cf6" />
         </View>
         <Text style={styles.title}>AI Insights</Text>
+        {provider ? (
+          <Text style={styles.providerBadge}>Powered by {provider}</Text>
+        ) : null}
       </View>
 
       {loading ? (
@@ -66,6 +70,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    flexWrap: 'wrap',
+  },
+  providerBadge: {
+    marginLeft: 'auto',
+    fontSize: 11,
+    color: '#9ca3af',
+    fontWeight: '500',
   },
   iconBadge: {
     width: 36,

@@ -21,6 +21,7 @@ export default function DashboardScreen() {
   const { obligations, profile, fsiBreakdown, loading } = useData();
   const [showWhatIf, setShowWhatIf] = useState(false);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [aiInsightsProvider, setAiInsightsProvider] = useState<string | null>(null);
   const [aiInsightsError, setAiInsightsError] = useState<string | null>(null);
   const [generatingInsights, setGeneratingInsights] = useState(false);
 
@@ -95,9 +96,11 @@ Calculate your FSI: https://financial-risk-scan.preview.emergentagent.com
       });
 
       setAiInsights(result.insights);
+      setAiInsightsProvider(result.provider ?? null);
     } catch (error) {
       console.error('Error generating AI insights:', error);
       setAiInsights(null);
+      setAiInsightsProvider(null);
       setAiInsightsError('AI insights unavailable.');
     } finally {
       setGeneratingInsights(false);
@@ -258,6 +261,7 @@ Calculate your FSI: https://financial-risk-scan.preview.emergentagent.com
         insights={aiInsights}
         loading={generatingInsights}
         error={aiInsightsError}
+        provider={aiInsightsProvider}
       />
 
       {/* Score Breakdown */}
