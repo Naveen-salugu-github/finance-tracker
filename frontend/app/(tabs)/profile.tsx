@@ -9,28 +9,36 @@ import {
   Alert,
 } from 'react-native';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { RegisteredToast } from '../components/RegisteredToast';
 import { IncomeType } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native';
 
 export default function ProfileScreen() {
   const { profile, updateProfile } = useData();
+  const { signOut } = useAuth();
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     monthlyIncome: '',
     emergencySavings: '',
     incomeType: 'Salaried' as IncomeType,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [showRegisteredToast, setShowRegisteredToast] = useState(false);
 
   const incomeTypes: IncomeType[] = ['Salaried', 'Business', 'Freelance'];
 
   useEffect(() => {
     if (profile) {
       setFormData({
+        firstName: profile.firstName ?? '',
+        lastName: profile.lastName ?? '',
         monthlyIncome: profile.monthlyIncome > 0 ? profile.monthlyIncome.toString() : '',
         emergencySavings: profile.emergencySavings > 0 ? profile.emergencySavings.toString() : '',
         incomeType: profile.incomeType,
@@ -61,11 +69,13 @@ export default function ProfileScreen() {
     try {
       setSaving(true);
       await updateProfile({
+        firstName: formData.firstName.trim() || undefined,
+        lastName: formData.lastName.trim() || undefined,
         monthlyIncome: parseFloat(formData.monthlyIncome),
         emergencySavings: formData.emergencySavings ? parseFloat(formData.emergencySavings) : 0,
         incomeType: formData.incomeType,
       });
-      Alert.alert('Success', 'Profile updated successfully');
+      setShowRegisteredToast(true);
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile');
     } finally {
@@ -93,6 +103,8 @@ export default function ProfileScreen() {
                 incomeType: 'Salaried',
               });
               setFormData({
+                firstName: '',
+                lastName: '',
                 monthlyIncome: '',
                 emergencySavings: '',
                 incomeType: 'Salaried',
@@ -159,6 +171,28 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.content}>
+          {/* Name */}
+          <Card style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.iconBadge}>
+                <Ionicons name="person-outline" size={24} color="#8b5cf6" />
+              </View>
+              <Text style={styles.cardTitle}>Name</Text>
+            </View>
+            <Input
+              label="First name"
+              value={formData.firstName}
+              onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+              placeholder="First name"
+            />
+            <Input
+              label="Last name"
+              value={formData.lastName}
+              onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+              placeholder="Last name"
+            />
+          </Card>
+
           {/* Monthly Income */}
           <Card style={styles.card}>
             <View style={styles.cardHeader}>
@@ -271,10 +305,33 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
           )}
+
+          {/* Sign out */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.signOutButton}
+              onPress={() => {
+                Alert.alert('Sign out', 'Are you sure?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
+                ]);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#6b7280" />
+              <Text style={styles.signOutButtonText}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      <RegisteredToast
+        visible={showRegisteredToast}
+        onHide={() => setShowRegisteredToast(false)}
+        message="You're registered!"
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -383,6 +440,22 @@ const styles = StyleSheet.create({
   },
   resetButtonText: {
     color: '#ef4444',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3f4f6',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  signOutButtonText: {
+    color: '#6b7280',
     fontSize: 16,
     fontWeight: '600',
   },
