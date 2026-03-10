@@ -24,10 +24,8 @@ The app runs entirely on **Vercel**: the frontend and a small serverless API tha
 
 ## 3. Deploy
 
-Redeploy the project (or push a new commit). Vercel will:
-
-- Build the frontend (`cd frontend && npm run build`) and serve it from `frontend/dist`.
-- Expose **`/api/ai-insights`** as a serverless function that calls Groq with your key.
+1. In Vercel, set **Root Directory** to **`frontend`** (Project Settings → General). The build will run from the `frontend` folder.
+2. Redeploy (or push a new commit). Vercel will run `npm install` and `npm run build` in `frontend`, serve the app from `frontend/dist`, and expose **`/api/ai-insights`** from `frontend/api/`.
 
 The frontend uses the **same origin** when `EXPO_PUBLIC_BACKEND_URL` is not set, so it will call `https://your-app.vercel.app/api/ai-insights` automatically. No extra config needed.
 
