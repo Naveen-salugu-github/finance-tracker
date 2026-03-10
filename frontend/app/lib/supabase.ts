@@ -7,9 +7,19 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
 
+// During Vercel static export / SSR there is no window; AsyncStorage would throw. Use no-op storage in Node.
+const isBrowser = typeof window !== 'undefined';
+const authStorage = isBrowser
+  ? AsyncStorage
+  : {
+      getItem: async (_key: string) => null,
+      setItem: async (_key: string, _value: string) => {},
+      removeItem: async (_key: string) => {},
+    };
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
