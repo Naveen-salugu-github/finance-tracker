@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../context/AuthContext';
-import { Input } from '../components/Input';
-import { Button } from '../components/Button';
+import { useAuth } from './context/AuthContext';
+import { Input } from './components/Input';
+import { Button } from './components/Button';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
