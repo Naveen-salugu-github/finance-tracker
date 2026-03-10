@@ -29,3 +29,13 @@ export interface RiskCategory {
   color: string;
   range: string;
 }
+
+export interface AIInsightsRequest {
+  income: number;
+  expenses: Record<string, number>;
+}
+
+export interface AIInsightsResponse {
+  insights: string;
+  provider?: string;
+}
