@@ -1,13 +1,19 @@
 import { AIInsightsRequest, AIInsightsResponse } from '../types';
 
-const backendUrl = (process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(
-  /\/$/,
-  ''
-);
+const getBackendUrl = (): string => {
+  if (process.env.EXPO_PUBLIC_BACKEND_URL) {
+    return process.env.EXPO_PUBLIC_BACKEND_URL.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return 'http://localhost:8000';
+};
 
 export async function generateAIInsights(
   payload: AIInsightsRequest
 ): Promise<AIInsightsResponse> {
+  const backendUrl = getBackendUrl();
   const response = await fetch(`${backendUrl}/api/ai-insights`, {
     method: 'POST',
     headers: {

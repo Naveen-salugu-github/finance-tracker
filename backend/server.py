@@ -57,12 +57,24 @@ def build_ai_insights_prompt(income: float, expenses: Dict[str, float]) -> str:
         expense_lines = "No expenses provided."
 
     return (
-        "You are a personal finance assistant. Analyze the following financial data "
-        "and give 3 short insights that help the user improve spending habits.\n"
-        f"Income: {income}\n"
-        f"Expenses:\n{expense_lines}\n"
-        "Return clear bullet points."
+        "Brutal finance take. Exactly 3 short lines. No intro.\n"
+        f"Income: {income}. Expenses: {expense_lines}\n"
+        "3 lines only:"
     )
+
+
+def format_ai_insights(insights: str) -> str:
+    cleaned = insights.replace("<think>", "").replace("</think>", "").strip()
+    lines = [
+        line.strip().lstrip("-*•0123456789. )(").strip()
+        for line in cleaned.splitlines()
+        if line.strip()
+    ]
+
+    if not lines:
+        return "Spending is unfocused.\nYour biggest expense needs scrutiny.\nCut waste before it compounds."
+
+    return "\n".join(lines[:3])
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
@@ -85,14 +97,16 @@ async def get_status_checks():
 @api_router.post("/ai-insights", response_model=AIInsightsResponse)
 async def generate_ai_insights(input: AIInsightsRequest):
     ai_model_endpoint = os.environ.get("AI_MODEL_ENDPOINT")
+    ai_model_timeout = int(os.environ.get("AI_MODEL_TIMEOUT_SECONDS", "300"))
     if not ai_model_endpoint:
         raise HTTPException(status_code=503, detail="AI insights unavailable.")
 
     prompt = build_ai_insights_prompt(input.income, input.expenses)
     payload = {
-        "model": "deepseek-r1:latest",
+        "model": "llama3.2:3b",
         "prompt": prompt,
         "stream": False,
+        "options": {"num_predict": 100},
     }
 
     try:
@@ -100,7 +114,7 @@ async def generate_ai_insights(input: AIInsightsRequest):
             requests.post,
             ai_model_endpoint,
             json=payload,
-            timeout=30,
+            timeout=ai_model_timeout,
         )
         response.raise_for_status()
         result = response.json()
@@ -115,7 +129,7 @@ async def generate_ai_insights(input: AIInsightsRequest):
     if not insights or not isinstance(insights, str):
         raise HTTPException(status_code=502, detail="AI insights unavailable.")
 
-    return AIInsightsResponse(insights=insights)
+    return AIInsightsResponse(insights=format_ai_insights(insights))
 
 # Include the router in the main app
 app.include_router(api_router)
