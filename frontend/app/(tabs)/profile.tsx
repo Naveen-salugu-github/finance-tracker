@@ -327,6 +327,9 @@ export default function ProfileScreen() {
                           router.replace('/login');
                         } else {
                           await signOut();
+                          if (typeof window !== 'undefined') {
+                            window.location.href = (window.location.origin || '') + '/login';
+                          }
                         }
                       },
                     },

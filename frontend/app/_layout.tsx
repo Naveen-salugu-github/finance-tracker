@@ -1,32 +1,20 @@
-import React from 'react';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Stack, useSegments, Redirect } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect } from 'react';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { View, Text, StyleSheet } from 'react-native';
 
-function useProtectedRoute() {
-  const { session, loading, guestMode } = useAuth();
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (loading) return;
-    const inTabs = segments[0] === '(tabs)';
-    const onLogin = segments[0] === 'login';
-
-    if (!session && !guestMode && inTabs) {
-      router.replace('/login');
-    } else if ((session || guestMode) && onLogin) {
-      router.replace('/(tabs)');
-    }
-  }, [session, loading, guestMode, segments]);
-}
-
 function RootLayoutNav() {
-  const { session, loading } = useAuth();
-  useProtectedRoute();
+  const { session, loading, guestMode, signOutWantsLogin, clearSignOutWantsLogin } = useAuth();
+  const segments = useSegments();
+
+  // Clear the sign-out flag only after we've landed on login (avoid clearing before Redirect runs)
+  useEffect(() => {
+    if (segments[0] === 'login' && signOutWantsLogin) {
+      clearSignOutWantsLogin();
+    }
+  }, [segments[0], signOutWantsLogin]);
 
   if (loading) {
     return (
@@ -34,6 +22,17 @@ function RootLayoutNav() {
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
+  }
+
+  const inTabs = segments[0] === '(tabs)';
+  const onLogin = segments[0] === 'login';
+
+  if (signOutWantsLogin || (!session && !guestMode && inTabs)) {
+    return <Redirect href="/login" />;
+  }
+
+  if ((session || guestMode) && onLogin) {
+    return <Redirect href="/(tabs)" />;
   }
 
   return (

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Obligation, UserProfile, FSIBreakdown } from '../types';
 import { storageService } from '../services/storage';
 import { supabaseProfile } from '../services/supabaseProfile';
+import { supabaseObligations } from '../services/supabaseObligations';
 import { fsiCalculator } from '../services/fsiCalculator';
 import { notificationService } from '../services/notifications';
 import { useAuth } from './AuthContext';
@@ -39,19 +40,44 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const remote = await supabaseProfile.getProfile(session.user.id);
         if (!cancelled && remote) {
-          setProfile((prev) => ({
-            ...(prev || { monthlyIncome: 0, emergencySavings: 0, incomeType: 'Salaried' }),
-            ...remote,
-          }));
-          await storageService.saveProfile({
-            ...remote,
-            monthlyIncome: remote.monthlyIncome,
-            emergencySavings: remote.emergencySavings,
-            incomeType: remote.incomeType,
+          setProfile((prev) => {
+            const base = prev || { monthlyIncome: 0, emergencySavings: 0, incomeType: 'Salaried' as const };
+            const merged: UserProfile = {
+              monthlyIncome: remote.monthlyIncome,
+              emergencySavings: remote.emergencySavings,
+              incomeType: remote.incomeType,
+              firstName: remote.firstName ?? base.firstName,
+              lastName: remote.lastName ?? base.lastName,
+            };
+            storageService.saveProfile(merged).catch(console.error);
+            return merged;
           });
         }
       } catch (e) {
         console.error('Error loading Supabase profile:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const remoteObligations = await supabaseObligations.getObligations(session.user.id);
+        if (cancelled) return;
+        if (remoteObligations.length > 0) {
+          setObligations(remoteObligations);
+          await storageService.saveObligations(remoteObligations);
+        } else {
+          const localObligations = await storageService.getObligations();
+          if (localObligations.length > 0) {
+            await supabaseObligations.saveObligations(session.user.id, localObligations);
+          }
+        }
+      } catch (e) {
+        console.error('Error loading Supabase obligations:', e);
       }
     })();
     return () => { cancelled = true; };
@@ -103,6 +129,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const updatedObligations = [...obligations, newObligation];
       await storageService.saveObligations(updatedObligations);
       setObligations(updatedObligations);
+      if (session?.user?.id) {
+        await supabaseObligations.saveObligations(session.user.id, updatedObligations);
+      }
       
       // Schedule notification if due date is set
       if (newObligation.dueDate) {
@@ -121,6 +150,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
       await storageService.saveObligations(updatedObligations);
       setObligations(updatedObligations);
+      if (session?.user?.id) {
+        await supabaseObligations.saveObligations(session.user.id, updatedObligations);
+      }
       
       // Update notification
       const updatedObligation = updatedObligations.find(obl => obl.id === id);
@@ -140,6 +172,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const updatedObligations = obligations.filter(obl => obl.id !== id);
       await storageService.saveObligations(updatedObligations);
       setObligations(updatedObligations);
+      if (session?.user?.id) {
+        await supabaseObligations.saveObligations(session.user.id, updatedObligations);
+      }
       
       // Cancel notification
       await notificationService.cancelObligationNotification(id);
