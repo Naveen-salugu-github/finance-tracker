@@ -62,6 +62,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await supabase.auth.signOut();
     await AsyncStorage.removeItem(GUEST_MODE_KEY);
     setGuestMode(false);
+    setSession(null);
+    setUser(null);
   };
 
   const skipRegistration = async () => {

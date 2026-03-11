@@ -327,6 +327,7 @@ export default function ProfileScreen() {
                           router.replace('/login');
                         } else {
                           await signOut();
+                          router.replace('/login');
                         }
                       },
                     },
