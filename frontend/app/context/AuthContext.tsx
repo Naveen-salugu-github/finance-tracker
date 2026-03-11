@@ -10,6 +10,8 @@ type AuthContextType = {
   session: Session | null;
   loading: boolean;
   guestMode: boolean;
+  signOutWantsLogin: boolean;
+  clearSignOutWantsLogin: () => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -24,6 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [guestMode, setGuestMode] = useState(false);
+  const [signOutWantsLogin, setSignOutWantsLogin] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -64,7 +67,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setGuestMode(false);
     setSession(null);
     setUser(null);
+    setSignOutWantsLogin(true);
   };
+
+  const clearSignOutWantsLogin = () => setSignOutWantsLogin(false);
 
   const skipRegistration = async () => {
     await AsyncStorage.setItem(GUEST_MODE_KEY, 'true');
@@ -83,6 +89,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         session,
         loading,
         guestMode,
+        signOutWantsLogin,
+        clearSignOutWantsLogin,
         signIn,
         signUp,
         signOut,

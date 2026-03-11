@@ -7,12 +7,19 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { View, Text, StyleSheet } from 'react-native';
 
 function useProtectedRoute() {
-  const { session, loading, guestMode } = useAuth();
+  const { session, loading, guestMode, signOutWantsLogin, clearSignOutWantsLogin } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
+
+    if (signOutWantsLogin) {
+      clearSignOutWantsLogin();
+      router.replace('/login');
+      return;
+    }
+
     const inTabs = segments[0] === '(tabs)';
     const onLogin = segments[0] === 'login';
 
@@ -21,7 +28,7 @@ function useProtectedRoute() {
     } else if ((session || guestMode) && onLogin) {
       router.replace('/(tabs)');
     }
-  }, [session, loading, guestMode, segments]);
+  }, [session, loading, guestMode, signOutWantsLogin, segments]);
 }
 
 function RootLayoutNav() {
