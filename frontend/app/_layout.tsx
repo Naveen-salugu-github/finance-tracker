@@ -1,39 +1,19 @@
-import React from 'react';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Stack, useSegments, Redirect } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect } from 'react';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { View, Text, StyleSheet } from 'react-native';
 
-function useProtectedRoute() {
+function RootLayoutNav() {
   const { session, loading, guestMode, signOutWantsLogin, clearSignOutWantsLogin } = useAuth();
   const segments = useSegments();
-  const router = useRouter();
 
   useEffect(() => {
-    if (loading) return;
-
     if (signOutWantsLogin) {
       clearSignOutWantsLogin();
-      router.replace('/login');
-      return;
     }
-
-    const inTabs = segments[0] === '(tabs)';
-    const onLogin = segments[0] === 'login';
-
-    if (!session && !guestMode && inTabs) {
-      router.replace('/login');
-    } else if ((session || guestMode) && onLogin) {
-      router.replace('/(tabs)');
-    }
-  }, [session, loading, guestMode, signOutWantsLogin, segments]);
-}
-
-function RootLayoutNav() {
-  const { session, loading } = useAuth();
-  useProtectedRoute();
+  }, [signOutWantsLogin]);
 
   if (loading) {
     return (
@@ -41,6 +21,17 @@ function RootLayoutNav() {
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
+  }
+
+  const inTabs = segments[0] === '(tabs)';
+  const onLogin = segments[0] === 'login';
+
+  if (signOutWantsLogin || (!session && !guestMode && inTabs)) {
+    return <Redirect href="/login" />;
+  }
+
+  if ((session || guestMode) && onLogin) {
+    return <Redirect href="/(tabs)" />;
   }
 
   return (
