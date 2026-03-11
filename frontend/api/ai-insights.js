@@ -3,20 +3,47 @@
  * Calls Groq so the API key stays on the server. Set GROQ_API_KEY in Vercel env.
  */
 
+/**
+ * Vercel serverless: POST /api/ai-insights
+ * Calls Groq so the API key stays on the server. Set GROQ_API_KEY in Vercel env.
+ */
+
+function getSituation(income, expenses) {
+  const totalObligations = Object.values(expenses).reduce((s, v) => s + Number(v) || 0, 0);
+  if (income <= 0) return 'no_income';
+  if (totalObligations <= 0) return 'no_obligations';
+  const ratio = totalObligations / income;
+  if (ratio >= 0.7) return 'obligations_very_high';
+  if (ratio >= 0.5) return 'obligations_high';
+  if (ratio >= 0.3) return 'obligations_moderate';
+  return 'obligations_low';
+}
+
 function buildPrompt(income, expenses) {
+  const situation = getSituation(income, expenses);
   const parts =
     Object.keys(expenses).length > 0
       ? Object.entries(expenses)
           .map(([k, v]) => `${k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}: ${v}`)
           .join(', ')
-      : 'No expenses provided.';
+      : 'None.';
+  const situationBrief = {
+    no_income: 'They have no or zero income entered.',
+    no_obligations: 'They have income but no obligations or expenses listed yet.',
+    obligations_very_high: 'Their obligations take most of their income; very little room left.',
+    obligations_high: 'Their obligations are a large share of income; they are stretched.',
+    obligations_moderate: 'Their obligations are a moderate share; some room but not a lot.',
+    obligations_low: 'Their obligations are low relative to income; they have meaningful room.',
+  }[situation];
+
   return (
-    'Give 3 short lines of thoughtful, behavioural finance insight. Rules:\n' +
-    '- Do NOT include any numbers, calculations, percentages, or figures in your response.\n' +
-    '- No "net income", "remaining", or math. Only words and ideas.\n' +
-    '- Instead: warn what happens if they keep spending like this, or encourage mindfulness, or compare to how others in a similar situation act, or give a good vs bad example. Be specific to their situation but without citing amounts.\n\n' +
-    `Context (for you only; do not repeat these numbers): Income and obligations in INR — Income: ${income}. Obligations: ${parts}.\n\n` +
-    'Respond with exactly 3 lines. No numbers in the response:'
+    'You are giving financial insight to ONE specific person. Base your reply only on their situation below.\n\n' +
+    `Their situation: ${situationBrief} (All amounts are in INR. Income: ${income}. Obligations breakdown: ${parts}.)\n\n` +
+    'Rules for your reply:\n' +
+    '- Do NOT include any numbers, percentages, or figures. Only words.\n' +
+    '- Give exactly 3 short lines that fit THIS person. If they are stretched, speak to that. If they have room, speak to using it wisely. If they have no obligations yet, speak to that. Do not give generic advice that could apply to anyone.\n' +
+    '- Be direct and thoughtful: what happens if they continue, or what would help someone in this exact situation, or a comparison that fits (e.g. people with similar balance often…).\n\n' +
+    'Respond with exactly 3 lines. No numbers:'
   );
 }
 
@@ -66,7 +93,7 @@ export default async function handler(req, res) {
       {
         role: 'system',
         content:
-          'You give short, thoughtful financial insights. Never use numbers, calculations, or figures in your reply. Give behavioural wisdom: what happens if they continue, mindfulness, comparisons (e.g. people in similar situations), or good vs bad examples. Direct and honest, but no math.',
+          'You give short financial insights tailored to ONE person. You are told their situation in plain language (e.g. "obligations are high relative to income"). Your reply must fit that situation: if they are stretched, speak to strain and choices; if they have room, speak to using it well; if they have no obligations yet, speak to that. Never use numbers or figures in your reply. Never give generic advice—always match the situation you were given. Exactly 3 lines.',
       },
       { role: 'user', content: prompt },
     ],
