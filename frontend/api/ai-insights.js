@@ -11,9 +11,11 @@ function buildPrompt(income, expenses) {
           .join(', ')
       : 'No expenses provided.';
   return (
+    'IMPORTANT: All amounts are in INR (Indian Rupees). Do NOT use $ or dollars. Use ₹ or "INR" only.\n' +
+    'Be precise with numbers: do not make math mistakes. Double-check any percentages or comparisons.\n\n' +
     'Brutal finance take. Exactly 3 short lines. No intro.\n' +
-    `Income: ${income}. Expenses: ${parts}\n` +
-    '3 lines only:'
+    `Income (INR): ${income}. Expenses (INR): ${parts}\n` +
+    'Respond with exactly 3 lines. Use INR/₹ only:'
   );
 }
 
@@ -57,11 +59,18 @@ export default async function handler(req, res) {
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 100,
-      }),
+  body: JSON.stringify({
+    model: 'llama-3.1-8b-instant',
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You give short financial tips. All amounts are in Indian Rupees (INR). Never use $ or dollars. Use ₹ or INR. Be accurate with arithmetic; do not make calculation errors.',
+      },
+      { role: 'user', content: prompt },
+    ],
+    max_tokens: 120,
+  }),
     });
     if (r.ok) {
       const data = await r.json();

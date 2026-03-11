@@ -328,7 +328,7 @@ export default function ProfileScreen() {
                         } else {
                           await signOut();
                           if (typeof window !== 'undefined') {
-                            window.location.pathname = '/login';
+                            window.location.href = (window.location.origin || '') + '/login';
                           }
                         }
                       },
