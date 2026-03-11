@@ -11,11 +11,12 @@ function buildPrompt(income, expenses) {
           .join(', ')
       : 'No expenses provided.';
   return (
-    'IMPORTANT: All amounts are in INR (Indian Rupees). Do NOT use $ or dollars. Use ₹ or "INR" only.\n' +
-    'Be precise with numbers: do not make math mistakes. Double-check any percentages or comparisons.\n\n' +
-    'Brutal finance take. Exactly 3 short lines. No intro.\n' +
-    `Income (INR): ${income}. Expenses (INR): ${parts}\n` +
-    'Respond with exactly 3 lines. Use INR/₹ only:'
+    'Give 3 short lines of thoughtful, behavioural finance insight. Rules:\n' +
+    '- Do NOT include any numbers, calculations, percentages, or figures in your response.\n' +
+    '- No "net income", "remaining", or math. Only words and ideas.\n' +
+    '- Instead: warn what happens if they keep spending like this, or encourage mindfulness, or compare to how others in a similar situation act, or give a good vs bad example. Be specific to their situation but without citing amounts.\n\n' +
+    `Context (for you only; do not repeat these numbers): Income and obligations in INR — Income: ${income}. Obligations: ${parts}.\n\n` +
+    'Respond with exactly 3 lines. No numbers in the response:'
   );
 }
 
@@ -30,7 +31,7 @@ function formatInsights(text) {
 }
 
 const FALLBACK =
-  'Spending is unfocused.\nYour biggest expense needs scrutiny.\nCut waste before it compounds.';
+  'Spending patterns like this often creep up over time.\nPeople who pause and adjust early usually end up in a better place.\nSmall leaks sink ships—be mindful where it goes.';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -65,11 +66,11 @@ export default async function handler(req, res) {
       {
         role: 'system',
         content:
-          'You give short financial tips. All amounts are in Indian Rupees (INR). Never use $ or dollars. Use ₹ or INR. Be accurate with arithmetic; do not make calculation errors.',
+          'You give short, thoughtful financial insights. Never use numbers, calculations, or figures in your reply. Give behavioural wisdom: what happens if they continue, mindfulness, comparisons (e.g. people in similar situations), or good vs bad examples. Direct and honest, but no math.',
       },
       { role: 'user', content: prompt },
     ],
-    max_tokens: 120,
+    max_tokens: 150,
   }),
     });
     if (r.ok) {
