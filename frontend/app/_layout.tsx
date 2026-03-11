@@ -9,11 +9,12 @@ function RootLayoutNav() {
   const { session, loading, guestMode, signOutWantsLogin, clearSignOutWantsLogin } = useAuth();
   const segments = useSegments();
 
+  // Clear the sign-out flag only after we've landed on login (avoid clearing before Redirect runs)
   useEffect(() => {
-    if (signOutWantsLogin) {
+    if (segments[0] === 'login' && signOutWantsLogin) {
       clearSignOutWantsLogin();
     }
-  }, [signOutWantsLogin]);
+  }, [segments[0], signOutWantsLogin]);
 
   if (loading) {
     return (
