@@ -84,6 +84,39 @@ This gives you:
 
 ---
 
+## 3b. Create the `obligations` table (restore after sign-in)
+
+Run this in the SQL Editor so obligations are stored per user and restored when they log back in:
+
+```sql
+create table if not exists public.obligations (
+  id text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  category text not null,
+  monthly_amount numeric not null default 0,
+  due_date smallint,
+  created_at timestamptz default now(),
+  primary key (user_id, id)
+);
+
+alter table public.obligations enable row level security;
+
+create policy "Users can read own obligations"
+  on public.obligations for select using (auth.uid() = user_id);
+
+create policy "Users can insert own obligations"
+  on public.obligations for insert with check (auth.uid() = user_id);
+
+create policy "Users can update own obligations"
+  on public.obligations for update using (auth.uid() = user_id);
+
+create policy "Users can delete own obligations"
+  on public.obligations for delete using (auth.uid() = user_id);
+```
+
+---
+
 ## 4. Auth settings (optional)
 
 In Supabase **Authentication → Settings** you can:
@@ -109,6 +142,7 @@ In Supabase **Authentication → Settings** you can:
 |-----------------|-------------|-------------------------------|
 | Auth            | Supabase    | Email/password sign in / up   |
 | User profiles   | Supabase    | `profiles` table, RLS         |
+| Obligations     | Supabase    | `obligations` table, RLS      |
 | Env vars        | `frontend`  | `EXPO_PUBLIC_SUPABASE_*`      |
 
 Userbase is all users in **Authentication → Users**; profile data is in **Table Editor → profiles**.
