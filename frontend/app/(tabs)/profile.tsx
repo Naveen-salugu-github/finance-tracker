@@ -8,6 +8,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
@@ -19,8 +20,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { profile, updateProfile } = useData();
-  const { signOut } = useAuth();
+  const { signOut, guestMode, clearGuestMode } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -311,15 +313,32 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.signOutButton}
               onPress={() => {
-                Alert.alert('Sign out', 'Are you sure?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
-                ]);
+                Alert.alert(
+                  guestMode ? 'Leave guest mode' : 'Sign out',
+                  guestMode ? 'You will need to sign in or skip again to return.' : 'Are you sure?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: guestMode ? 'Leave' : 'Sign out',
+                      style: 'destructive',
+                      onPress: async () => {
+                        if (guestMode) {
+                          await clearGuestMode();
+                          router.replace('/login');
+                        } else {
+                          await signOut();
+                        }
+                      },
+                    },
+                  ]
+                );
               }}
               activeOpacity={0.7}
             >
               <Ionicons name="log-out-outline" size={20} color="#6b7280" />
-              <Text style={styles.signOutButtonText}>Sign out</Text>
+              <Text style={styles.signOutButtonText}>
+                {guestMode ? 'Leave guest mode' : 'Sign out'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

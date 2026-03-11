@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, skipRegistration } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -45,6 +45,11 @@ export default function LoginScreen() {
     } else {
       router.replace('/(tabs)');
     }
+  };
+
+  const handleSkip = async () => {
+    await skipRegistration();
+    router.replace('/(tabs)');
   };
 
   return (
@@ -103,6 +108,10 @@ export default function LoginScreen() {
             {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.skipButton} onPress={handleSkip} disabled={loading}>
+          <Text style={styles.skipText}>Skip for now — continue without account</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -159,5 +168,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#3b82f6',
     fontWeight: '600',
+  },
+  skipButton: {
+    marginTop: 20,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  skipText: {
+    fontSize: 14,
+    color: '#9ca3af',
   },
 });
