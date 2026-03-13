@@ -105,25 +105,12 @@ export default function ObligationsScreen() {
     }
   };
 
-  const handleDelete = (obligation: Obligation) => {
-    Alert.alert(
-      'Delete Obligation',
-      `Are you sure you want to delete "${obligation.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteObligation(obligation.id);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete obligation');
-            }
-          },
-        },
-      ]
-    );
+  const handleDelete = async (obligation: Obligation) => {
+    try {
+      await deleteObligation(obligation.id);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete obligation');
+    }
   };
 
   const getCategoryIcon = (category: ObligationCategory) => {

@@ -21,7 +21,7 @@ import { TouchableOpacity } from 'react-native';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, updateProfile } = useData();
+  const { profile, updateProfile, resetFinancialData } = useData();
   const { signOut, guestMode, clearGuestMode } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -85,40 +85,20 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleReset = () => {
-    Alert.alert(
-      'Reset Profile',
-      'Are you sure you want to reset your profile? This will clear all your financial information.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await updateProfile({
-                monthlyIncome: 0,
-                emergencySavings: 0,
-                incomeType: 'Salaried',
-              });
-              setFormData({
-                firstName: '',
-                lastName: '',
-                monthlyIncome: '',
-                emergencySavings: '',
-                incomeType: 'Salaried',
-              });
-              Alert.alert('Success', 'Profile has been reset');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to reset profile');
-            }
-          },
-        },
-      ]
-    );
+  const handleReset = async () => {
+    try {
+      await resetFinancialData();
+      setFormData({
+        firstName: '',
+        lastName: '',
+        monthlyIncome: '',
+        emergencySavings: '',
+        incomeType: 'Salaried',
+      });
+      Alert.alert('Success', 'Profile has been reset');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to reset profile');
+    }
   };
 
   const getIncomeTypeIcon = (type: IncomeType) => {
@@ -312,29 +292,22 @@ export default function ProfileScreen() {
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.signOutButton}
-              onPress={() => {
-                Alert.alert(
-                  guestMode ? 'Leave guest mode' : 'Sign out',
-                  guestMode ? 'You will need to sign in or skip again to return.' : 'Are you sure?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: guestMode ? 'Leave' : 'Sign out',
-                      style: 'destructive',
-                      onPress: async () => {
-                        if (guestMode) {
-                          await clearGuestMode();
-                          router.replace('/login');
-                        } else {
-                          await signOut();
-                          if (typeof window !== 'undefined') {
-                            window.location.href = (window.location.origin || '') + '/login';
-                          }
-                        }
-                      },
-                    },
-                  ]
-                );
+              onPress={async () => {
+                try {
+                  if (guestMode) {
+                    await clearGuestMode();
+                  } else {
+                    await signOut();
+                  }
+                } catch (e) {
+                  console.error('Sign out failed:', e);
+                } finally {
+                  if (typeof window !== 'undefined') {
+                    window.location.replace((window.location.origin || '') + '/login');
+                  } else {
+                    router.replace('/login');
+                  }
+                }
               }}
               activeOpacity={0.7}
             >
