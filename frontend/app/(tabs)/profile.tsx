@@ -21,7 +21,7 @@ import { TouchableOpacity } from 'react-native';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, updateProfile } = useData();
+  const { profile, updateProfile, resetFinancialData } = useData();
   const { signOut, guestMode, clearGuestMode } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -99,11 +99,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await updateProfile({
-                monthlyIncome: 0,
-                emergencySavings: 0,
-                incomeType: 'Salaried',
-              });
+              await resetFinancialData();
               setFormData({
                 firstName: '',
                 lastName: '',
@@ -322,13 +318,19 @@ export default function ProfileScreen() {
                       text: guestMode ? 'Leave' : 'Sign out',
                       style: 'destructive',
                       onPress: async () => {
-                        if (guestMode) {
-                          await clearGuestMode();
-                          router.replace('/login');
-                        } else {
-                          await signOut();
+                        try {
+                          if (guestMode) {
+                            await clearGuestMode();
+                          } else {
+                            await signOut();
+                          }
+                        } catch (e) {
+                          console.error('Sign out failed:', e);
+                        } finally {
                           if (typeof window !== 'undefined') {
-                            window.location.href = (window.location.origin || '') + '/login';
+                            window.location.replace((window.location.origin || '') + '/login');
+                          } else {
+                            router.replace('/login');
                           }
                         }
                       },

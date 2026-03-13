@@ -16,6 +16,7 @@ interface DataContextType {
   updateObligation: (id: string, updates: Partial<Obligation>) => Promise<void>;
   deleteObligation: (id: string) => Promise<void>;
   updateProfile: (profile: UserProfile) => Promise<void>;
+  resetFinancialData: () => Promise<void>;
   refreshData: () => Promise<void>;
 }
 
@@ -73,7 +74,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else {
           const localObligations = await storageService.getObligations();
           if (localObligations.length > 0) {
-            await supabaseObligations.saveObligations(session.user.id, localObligations);
+            await supabaseObligations.upsertObligations(session.user.id, localObligations);
           }
         }
       } catch (e) {
@@ -130,7 +131,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await storageService.saveObligations(updatedObligations);
       setObligations(updatedObligations);
       if (session?.user?.id) {
-        await supabaseObligations.saveObligations(session.user.id, updatedObligations);
+        await supabaseObligations.upsertObligation(session.user.id, newObligation);
       }
       
       // Schedule notification if due date is set
@@ -151,7 +152,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await storageService.saveObligations(updatedObligations);
       setObligations(updatedObligations);
       if (session?.user?.id) {
-        await supabaseObligations.saveObligations(session.user.id, updatedObligations);
+        const updatedObligation = updatedObligations.find((obl) => obl.id === id);
+        if (updatedObligation) {
+          await supabaseObligations.upsertObligation(session.user.id, updatedObligation);
+        }
       }
       
       // Update notification
@@ -173,7 +177,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await storageService.saveObligations(updatedObligations);
       setObligations(updatedObligations);
       if (session?.user?.id) {
-        await supabaseObligations.saveObligations(session.user.id, updatedObligations);
+        await supabaseObligations.deleteObligation(session.user.id, id);
       }
       
       // Cancel notification
@@ -201,6 +205,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const resetFinancialData = async () => {
+    const emptyProfile: UserProfile = {
+      monthlyIncome: 0,
+      emergencySavings: 0,
+      incomeType: 'Salaried',
+      firstName: undefined,
+      lastName: undefined,
+    };
+    const currentObligations = obligations;
+
+    await storageService.saveProfile(emptyProfile);
+    await storageService.saveObligations([]);
+    setProfile(emptyProfile);
+    setObligations([]);
+
+    // Clear scheduled notifications for old obligations
+    await Promise.all(
+      currentObligations.map((obl) => notificationService.cancelObligationNotification(obl.id))
+    );
+
+    if (session?.user) {
+      await supabaseProfile.upsertProfile(
+        session.user.id,
+        session.user.email ?? undefined,
+        emptyProfile
+      );
+      await supabaseObligations.clearObligations(session.user.id);
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -212,6 +246,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateObligation,
         deleteObligation,
         updateProfile,
+        resetFinancialData,
         refreshData,
       }}
     >

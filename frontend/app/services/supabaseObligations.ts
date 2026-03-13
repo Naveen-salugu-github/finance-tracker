@@ -45,15 +45,34 @@ export const supabaseObligations = {
     return (data || []).map((row) => rowToObligation(row as SupabaseObligationRow));
   },
 
-  async saveObligations(userId: string, obligations: Obligation[]): Promise<void> {
-    if (obligations.length === 0) {
-      await supabase.from(TABLE).delete().eq('user_id', userId);
-      return;
-    }
+  async upsertObligation(userId: string, obligation: Obligation): Promise<void> {
+    const row = obligationToRow(obligation, userId);
+    const { error } = await supabase.from(TABLE).upsert(row, {
+      onConflict: 'user_id,id',
+    });
+    if (error) throw error;
+  },
+
+  async upsertObligations(userId: string, obligations: Obligation[]): Promise<void> {
+    if (obligations.length === 0) return;
     const rows = obligations.map((obl) => obligationToRow(obl, userId));
-    const { error: deleteErr } = await supabase.from(TABLE).delete().eq('user_id', userId);
-    if (deleteErr) console.error('Error clearing obligations:', deleteErr);
-    const { error: insertErr } = await supabase.from(TABLE).insert(rows);
-    if (insertErr) throw insertErr;
+    const { error } = await supabase.from(TABLE).upsert(rows, {
+      onConflict: 'user_id,id',
+    });
+    if (error) throw error;
+  },
+
+  async deleteObligation(userId: string, obligationId: string): Promise<void> {
+    const { error } = await supabase
+      .from(TABLE)
+      .delete()
+      .eq('user_id', userId)
+      .eq('id', obligationId);
+    if (error) throw error;
+  },
+
+  async clearObligations(userId: string): Promise<void> {
+    const { error } = await supabase.from(TABLE).delete().eq('user_id', userId);
+    if (error) throw error;
   },
 };

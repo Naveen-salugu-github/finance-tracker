@@ -115,6 +115,14 @@ create policy "Users can delete own obligations"
   on public.obligations for delete using (auth.uid() = user_id);
 ```
 
+If your project already had an `obligations` table from older setup, ensure the delete policy exists (without this, users can add but cannot remove obligations):
+
+```sql
+drop policy if exists "Users can delete own obligations" on public.obligations;
+create policy "Users can delete own obligations"
+  on public.obligations for delete using (auth.uid() = user_id);
+```
+
 ---
 
 ## 4. Auth settings (optional)
