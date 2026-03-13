@@ -34,6 +34,33 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [showRegisteredToast, setShowRegisteredToast] = useState(false);
 
+  const confirmAction = (
+    title: string,
+    message: string,
+    onConfirm: () => Promise<void> | void
+  ) => {
+    if (typeof window !== 'undefined') {
+      if (window.confirm(`${title}\n\n${message}`)) {
+        Promise.resolve(onConfirm()).catch(() => {
+          Alert.alert('Error', 'Action failed');
+        });
+      }
+      return;
+    }
+    Alert.alert(title, message, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Confirm',
+        style: 'destructive',
+        onPress: () => {
+          Promise.resolve(onConfirm()).catch(() => {
+            Alert.alert('Error', 'Action failed');
+          });
+        },
+      },
+    ]);
+  };
+
   const incomeTypes: IncomeType[] = ['Salaried', 'Business', 'Freelance'];
 
   useEffect(() => {
@@ -86,34 +113,20 @@ export default function ProfileScreen() {
   };
 
   const handleReset = () => {
-    Alert.alert(
+    confirmAction(
       'Reset Profile',
       'Are you sure you want to reset your profile? This will clear all your financial information.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await resetFinancialData();
-              setFormData({
-                firstName: '',
-                lastName: '',
-                monthlyIncome: '',
-                emergencySavings: '',
-                incomeType: 'Salaried',
-              });
-              Alert.alert('Success', 'Profile has been reset');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to reset profile');
-            }
-          },
-        },
-      ]
+      async () => {
+        await resetFinancialData();
+        setFormData({
+          firstName: '',
+          lastName: '',
+          monthlyIncome: '',
+          emergencySavings: '',
+          incomeType: 'Salaried',
+        });
+        Alert.alert('Success', 'Profile has been reset');
+      }
     );
   };
 
@@ -309,33 +322,26 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.signOutButton}
               onPress={() => {
-                Alert.alert(
+                confirmAction(
                   guestMode ? 'Leave guest mode' : 'Sign out',
                   guestMode ? 'You will need to sign in or skip again to return.' : 'Are you sure?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: guestMode ? 'Leave' : 'Sign out',
-                      style: 'destructive',
-                      onPress: async () => {
-                        try {
-                          if (guestMode) {
-                            await clearGuestMode();
-                          } else {
-                            await signOut();
-                          }
-                        } catch (e) {
-                          console.error('Sign out failed:', e);
-                        } finally {
-                          if (typeof window !== 'undefined') {
-                            window.location.replace((window.location.origin || '') + '/login');
-                          } else {
-                            router.replace('/login');
-                          }
-                        }
-                      },
-                    },
-                  ]
+                  async () => {
+                    try {
+                      if (guestMode) {
+                        await clearGuestMode();
+                      } else {
+                        await signOut();
+                      }
+                    } catch (e) {
+                      console.error('Sign out failed:', e);
+                    } finally {
+                      if (typeof window !== 'undefined') {
+                        window.location.replace((window.location.origin || '') + '/login');
+                      } else {
+                        router.replace('/login');
+                      }
+                    }
+                  }
                 );
               }}
               activeOpacity={0.7}
