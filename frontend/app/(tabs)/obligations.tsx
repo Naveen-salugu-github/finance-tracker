@@ -29,33 +29,6 @@ export default function ObligationsScreen() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const confirmAction = (
-    title: string,
-    message: string,
-    onConfirm: () => Promise<void> | void
-  ) => {
-    if (typeof window !== 'undefined') {
-      if (window.confirm(`${title}\n\n${message}`)) {
-        Promise.resolve(onConfirm()).catch(() => {
-          Alert.alert('Error', 'Action failed');
-        });
-      }
-      return;
-    }
-    Alert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Confirm',
-        style: 'destructive',
-        onPress: () => {
-          Promise.resolve(onConfirm()).catch(() => {
-            Alert.alert('Error', 'Action failed');
-          });
-        },
-      },
-    ]);
-  };
-
   const categories: ObligationCategory[] = ['EMI', 'Subscription', 'Insurance', 'Fixed Expense'];
 
   const resetForm = () => {
@@ -132,14 +105,12 @@ export default function ObligationsScreen() {
     }
   };
 
-  const handleDelete = (obligation: Obligation) => {
-    confirmAction(
-      'Delete Obligation',
-      `Are you sure you want to delete "${obligation.name}"?`,
-      async () => {
-        await deleteObligation(obligation.id);
-      }
-    );
+  const handleDelete = async (obligation: Obligation) => {
+    try {
+      await deleteObligation(obligation.id);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete obligation');
+    }
   };
 
   const getCategoryIcon = (category: ObligationCategory) => {
